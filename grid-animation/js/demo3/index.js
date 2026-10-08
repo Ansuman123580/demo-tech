@@ -3,11 +3,14 @@ import { preloadImages } from '../utils.js'; // Utility function to preload imag
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
 
-// Create a ScrollSmoother instance for smooth scrolling with lag effects
+const touchViewport = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
+// Keep native-feeling touch input while softening the movement on phones.
 const smoother = ScrollSmoother.create({
   wrapper: '#smooth-wrapper', // Keep the entire storefront in the page's one scroll container
   content: '#smooth-content',
-  smooth: 1, // Smoothing factor for scroll (0 = no smoothing, 1 = full smoothing)
+  smooth: 1.1,
+  smoothTouch: 0.12,
   effects: true, // Enable lag/scroll-based effects
   normalizeScroll: true, // Prevents mobile address bar resizing, disables overscroll bounce, and ensures scroll value consistency
 });
@@ -16,8 +19,8 @@ const smoother = ScrollSmoother.create({
 const grid = document.querySelector('.grid');
 
 // Lag configuration constants
-const baseLag = 0.2; // Initial lag for the first column
-const lagScale = 0.3; // Additional lag per column (applied incrementally)
+const baseLag = touchViewport ? 0.08 : 0.2; // Keep touch scrolling responsive while retaining the V03 stagger
+const lagScale = touchViewport ? 0.06 : 0.3; // Additional lag per column (applied incrementally)
 
 /**
  * Group grid items into columns based on computed CSS grid-template-columns
