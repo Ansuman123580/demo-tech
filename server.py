@@ -30,10 +30,17 @@ def read_offers():
     except (OSError, json.JSONDecodeError):
         return []
 
+CATALOG_VERSION = str(int(datetime.now(timezone.utc).timestamp() * 1000))
+
+def bump_catalog_version():
+    global CATALOG_VERSION
+    CATALOG_VERSION = str(int(datetime.now(timezone.utc).timestamp() * 1000))
+
 def save_offers(offers):
     tmp = DATA.with_suffix('.tmp')
     tmp.write_text(json.dumps(offers, ensure_ascii=False, indent=2), encoding='utf-8')
     tmp.replace(DATA)
+    bump_catalog_version()
 
 def sanitize_filename(filename):
     clean = re.sub(r'[^a-zA-Z0-9_.-]', '_', filename)
@@ -98,6 +105,14 @@ class Handler(SimpleHTTPRequestHandler):
         # Public offers list
         if path == '/api/offers':
             return self.send_json(200, read_offers())
+
+        # Catalog real-time version check for auto-refresh
+        if path == '/api/catalog-version':
+            offers = read_offers()
+            return self.send_json(200, {
+                'version': CATALOG_VERSION,
+                'count': len(offers)
+            })
 
         # Auth verify
         if path == '/api/auth/me':

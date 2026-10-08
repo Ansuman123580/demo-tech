@@ -527,6 +527,7 @@
         showToast('New product added to storefront!');
       }
 
+      notifyCatalogChanged();
       closeModal();
       await loadProducts();
     } catch (err) {
@@ -548,12 +549,61 @@
     try {
       await api(`/api/admin/offers/${id}`, { method: 'DELETE' });
       showToast('Product deleted.');
+      notifyCatalogChanged();
       await loadProducts();
     } catch (err) {
       showToast(err.message, true);
     }
   }
 
+  // Cross-tab and real-time synchronization
+  const adminChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('perkdrop_catalog_channel') : null;
+
+  function notifyCatalogChanged() {
+    const v = String(Date.now());
+    try {
+      localStorage.setItem('perkdrop_catalog_version', v);
+    } catch (_) {}
+    if (adminChannel) {
+      adminChannel.postMessage({ type: 'CATALOG_UPDATED', version: v });
+    }
+  }
+
+  if (adminChannel) {
+    adminChannel.onmessage = (event) => {
+      if (event.data && event.data.type === 'CATALOG_UPDATED') {
+        if (token) loadProducts();
+      }
+    };
+  }
+
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'perkdrop_catalog_version') {
+      if (token) loadProducts();
+    }
+  });
+
+  // Background sync for admin metrics and products
+  let adminLastVersion = '';
+  async function syncAdminVersion() {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/catalog-version', { cache: 'no-store' });
+      if (!res.ok) return;
+      const info = await res.json();
+      if (adminLastVersion && info.version && info.version !== adminLastVersion) {
+        adminLastVersion = info.version;
+        loadProducts();
+      } else if (!adminLastVersion && info.version) {
+        adminLastVersion = info.version;
+      }
+    } catch (_) {}
+  }
+
+  setInterval(syncAdminVersion, 3000);
+  window.addEventListener('focus', syncAdminVersion);
+
   // Initialize Auth Check
   checkAuth();
 })();
+

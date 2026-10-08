@@ -146,7 +146,9 @@
     }
   });
 
-  async function loadOffers() {
+  let currentCatalogVersion = '';
+
+  async function loadOffers(isAutoRefresh = false) {
     try {
       let data = null;
       try {
@@ -164,8 +166,12 @@
         }
       }
       if (!data || !Array.isArray(data)) throw new Error('Products could not be loaded.');
+      offers.length = 0;
       offers.push(...data);
       render();
+      if (isAutoRefresh) {
+        console.log('[perkdrop] Auto-refreshed storefront: ' + offers.length + ' products');
+      }
     } catch (error) {
       count.textContent = 'Unavailable';
       grid.replaceChildren(make('div', 'grid-empty', `${error.message} Refresh the page and try again.`));
@@ -173,6 +179,46 @@
     }
   }
 
+  // Real-time synchronization
+  const catalogChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('perkdrop_catalog_channel') : null;
+  if (catalogChannel) {
+    catalogChannel.onmessage = (event) => {
+      if (event.data && event.data.type === 'CATALOG_UPDATED') {
+        loadOffers(true);
+      }
+    };
+  }
+
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'perkdrop_catalog_version') {
+      loadOffers(true);
+    }
+  });
+
+  async function syncCatalogVersion() {
+    try {
+      const res = await fetch('/api/catalog-version', { cache: 'no-store' });
+      if (!res.ok) return;
+      const info = await res.json();
+      if (currentCatalogVersion && info.version && info.version !== currentCatalogVersion) {
+        currentCatalogVersion = info.version;
+        loadOffers(true);
+      } else if (!currentCatalogVersion && info.version) {
+        currentCatalogVersion = info.version;
+      }
+    } catch (_) {}
+  }
+
+  // Poll for background changes every 2.5 seconds
+  setInterval(syncCatalogVersion, 2500);
+
+  // Sync on tab visibility change or focus
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') syncCatalogVersion();
+  });
+  window.addEventListener('focus', syncCatalogVersion);
+
   render();
   loadOffers();
+  syncCatalogVersion();
 })();
