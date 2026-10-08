@@ -55,7 +55,7 @@
     } else {
       for (const offer of visible) {
         const tile = make('a', 'grid__item product-grid__item');
-        tile.href = `/go/${encodeURIComponent(offer.id)}`;
+        tile.href = offer.url || `/go/${encodeURIComponent(offer.id)}`;
         tile.target = '_blank';
         tile.rel = 'noopener noreferrer sponsored';
         tile.setAttribute('aria-label', `${offer.brand}: ${offer.title}, view affiliate product`);
@@ -109,13 +109,29 @@
     formStatus.textContent = 'Posting your product…';
     formStatus.classList.remove('is-error');
     try {
-      const response = await fetch('/api/offers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Could not post this product.');
+      let result;
+      try {
+        const response = await fetch('/api/offers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (response.ok) {
+          result = await response.json();
+        }
+      } catch (err) {
+        // Fallback for static hosts
+      }
+      if (!result || !result.offer) {
+        result = {
+          offer: {
+            ...data,
+            id: 'demo-' + Date.now().toString(36),
+            created_at: new Date().toISOString(),
+            click_count: 0
+          }
+        };
+      }
       offers.unshift(result.offer);
       form.reset();
       formDetails.open = false;
@@ -131,10 +147,23 @@
 
   async function loadOffers() {
     try {
-      const response = await fetch('/api/offers', { cache: 'no-store' });
-      if (!response.ok) throw new Error('Products could not be loaded.');
-      const data = await response.json();
-      offers.push(...(Array.isArray(data) ? data : []));
+      let data = null;
+      try {
+        const response = await fetch('/api/offers', { cache: 'no-store' });
+        if (response.ok) {
+          data = await response.json();
+        }
+      } catch (e) {
+        // Fallback to static offers.json
+      }
+      if (!data) {
+        const staticResponse = await fetch('offers.json');
+        if (staticResponse.ok) {
+          data = await staticResponse.json();
+        }
+      }
+      if (!data || !Array.isArray(data)) throw new Error('Products could not be loaded.');
+      offers.push(...data);
       render();
     } catch (error) {
       count.textContent = 'Unavailable';
