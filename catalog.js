@@ -55,7 +55,8 @@
     } else {
       for (const offer of visible) {
         const tile = make('a', 'grid__item product-grid__item');
-        tile.href = offer.url || `/go/${encodeURIComponent(offer.id)}`;
+        const isStaticHost = window.location.protocol === 'file:' || window.location.hostname.endsWith('github.io');
+        tile.href = isStaticHost ? (offer.url || '#') : `/go/${encodeURIComponent(offer.id)}`;
         tile.target = '_blank';
         tile.rel = 'noopener noreferrer sponsored';
         tile.setAttribute('aria-label', `${offer.brand}: ${offer.title}, view affiliate product`);
