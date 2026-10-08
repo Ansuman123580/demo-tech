@@ -6,7 +6,7 @@
     <title>Glassform — Neural Nuance</title>
     <link rel="stylesheet" href="grid-animation/css/base.css" />
     <link rel="stylesheet" href="https://use.typekit.net/qvq2ysy.css" />
-    <link rel="stylesheet" href="styles.css?v=14" />
+    <link rel="stylesheet" href="styles.css?v=15" />
   </head>
   <body>
     <div id="smooth-wrapper">
@@ -55,14 +55,76 @@
         <img class="footer-hover__source" src="./footer-mark.svg" alt="" aria-hidden="true" />
         <span class="footer-hover__hint" aria-hidden="true">Move through the mark</span>
       </div>
-      <div class="site-footer__bottom">
-        <a class="site-footer__brand" href="#categories" aria-label="Perkdrop home">PERKDROP<span>®</span></a>
-        <p>Good finds. Shared with intention.</p>
-        <nav class="site-footer__links" aria-label="Footer navigation">
-          <a href="#categories">Explore categories</a>
-          <a href="/admin" target="_blank" style="color: var(--gold, #e5b869);">Admin Studio ↗</a>
-          <a href="#categories">Back to top ↑</a>
-        </nav>
+
+      <div class="footer-inner">
+        <div class="footer-grid">
+          <!-- Col 1: Brand & Mission -->
+          <div class="footer-col footer-col--brand">
+            <a class="footer-brand" href="#categories" aria-label="Perkdrop home">
+              <span class="footer-brand__mark">✳</span>
+              <span class="footer-brand__name">PERKDROP STUDIO</span>
+            </a>
+            <p class="footer-desc">
+              Considered objects, desk instruments, and hardware finds curated for intentional workspaces.
+            </p>
+            <div class="footer-status-pill">
+              <span class="status-indicator"></span>
+              <span>Catalog Active · Instant Amazon & Flipkart Direct Link</span>
+            </div>
+          </div>
+
+          <!-- Col 2: Directory / Categories -->
+          <div class="footer-col">
+            <h4 class="footer-col__heading">Directory</h4>
+            <ul class="footer-links-list">
+              <li><a href="#categories" data-cat-nav="keyboards">⌨️ Keyboards</a></li>
+              <li><a href="#categories" data-cat-nav="mice">🖱️ Mice & Pointers</a></li>
+              <li><a href="#categories" data-cat-nav="watches">⌚ Wrist Watches</a></li>
+              <li><a href="#categories" data-cat-nav="audio">🎧 Studio Audio</a></li>
+              <li><a href="#categories" data-cat-nav="desk-gear">🪵 Desk Setup</a></li>
+            </ul>
+          </div>
+
+          <!-- Col 3: Transparency & Trust -->
+          <div class="footer-col">
+            <h4 class="footer-col__heading">Transparency</h4>
+            <p class="footer-disclosure">
+              Independent curation. When you click recommendations, we may earn an affiliate commission from Amazon or Flipkart at no extra charge to you.
+            </p>
+            <div class="footer-badges">
+              <span class="badge-item">Verified Links</span>
+              <span class="badge-item">Direct Redirects</span>
+            </div>
+          </div>
+
+          <!-- Col 4: Studio Access -->
+          <div class="footer-col footer-col--admin">
+            <h4 class="footer-col__heading">Curator Studio</h4>
+            <div class="footer-admin-box">
+              <span class="admin-box__tag">Admin Portal</span>
+              <p>Add products, manage categories & track live clicks</p>
+              <a href="/admin" target="_blank" class="admin-box__btn">
+                <span>Access Studio ↗</span>
+              </a>
+            </div>
+            <a href="#categories" class="back-to-top-link" id="footer-top-btn">
+              <span>Back to top ↑</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="footer-bottom-bar">
+          <p class="footer-copyright">
+            © 2026 Perkdrop Studio. All rights reserved. Curated with intention.
+          </p>
+          <div class="footer-meta-links">
+            <a href="#categories">Edition 01</a>
+            <span class="dot">·</span>
+            <a href="#categories">Amazon & Flipkart Affiliates</a>
+            <span class="dot">·</span>
+            <span class="version-tag">Studio v2.5</span>
+          </div>
+        </div>
       </div>
     </footer>
     </main>
@@ -71,7 +133,7 @@
     <script src="./grid-animation/js/ScrollTrigger.min.js"></script>
     <script src="./grid-animation/js/ScrollSmoother.min.js"></script>
     <script src="./grid-animation/js/imagesloaded.pkgd.min.js"></script>
-    <script src="./catalog.js?v=8"></script>
+    <script src="./catalog.js?v=9"></script>
     <script src="./footer-hover.js?v=2"></script>
     <script type="module" src="./grid-animation/js/demo3/index.js?v=4"></script>
   </body>

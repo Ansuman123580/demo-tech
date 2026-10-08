@@ -287,6 +287,23 @@
   });
   window.addEventListener('focus', syncCatalogVersion);
 
+  // Wire up footer category links and back to top
+  document.querySelectorAll('[data-cat-nav]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const cat = link.dataset.catNav;
+      selectCategory(cat);
+    });
+  });
+
+  const backToTopBtn = document.getElementById('footer-top-btn');
+  if (backToTopBtn) {
+    backToTopBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
   render();
   loadCategories();
   loadOffers();
