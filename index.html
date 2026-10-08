@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Glassform — Neural Nuance</title>
+    <link rel="stylesheet" href="grid-animation/css/base.css" />
+    <link rel="stylesheet" href="https://use.typekit.net/qvq2ysy.css" />
+    <link rel="stylesheet" href="styles.css?v=13" />
+  </head>
+  <body>
+    <div id="smooth-wrapper">
+    <main id="smooth-content">
+    <section class="webgl-hero" aria-label="Glassform WebGL hero animation">
+      <iframe
+        src="./webgl-hero/index.html"
+        title="Glassform WebGL hero animation"
+        allow="fullscreen"
+      ></iframe>
+    </section>
+    <section class="categories" id="categories" aria-labelledby="categories-title">
+      <div class="categories__top">
+        <div>
+          <p class="categories__eyebrow">Neural Nuance · Edition 01</p>
+          <h1 class="categories__title" id="categories-title">Considered tech for everyday life.</h1>
+        </div>
+        <p class="categories__intro">
+          A considered edit of the tools you reach for at your desk and beyond.
+        </p>
+      </div>
+
+
+      <nav class="category-selectors" aria-label="Filter products by category">
+        <button class="category-filter is-selected" type="button" data-category="" aria-pressed="true"><span class="category-filter__number">00</span><span>All finds</span></button>
+        <button class="category-filter" type="button" data-category="keyboards" aria-pressed="false"><span class="category-filter__number">01</span><span>Keyboards</span></button>
+        <button class="category-filter" type="button" data-category="mice" aria-pressed="false"><span class="category-filter__number">02</span><span>Mice</span></button>
+        <button class="category-filter" type="button" data-category="watches" aria-pressed="false"><span class="category-filter__number">03</span><span>Watches</span></button>
+        <button class="category-filter" type="button" data-category="audio" aria-pressed="false"><span class="category-filter__number">04</span><span>Audio</span></button>
+        <button class="category-filter" type="button" data-category="desk-gear" aria-pressed="false"><span class="category-filter__number">05</span><span>Desk Gear</span></button>
+      </nav>
+
+      <section class="grid-showcase demo-3" id="category-grid" aria-labelledby="product-list-title">
+        <div class="grid-showcase__head">
+          <div>
+            <p class="categories__eyebrow">Demo catalog · Sample picks, replace with affiliate links</p>
+            <h2 class="grid-showcase__title" id="product-list-title">All finds.</h2>
+            <p class="product-results__description" id="product-list-description">A sample storefront edit. Replace demo picks with real affiliate finds later.</p>
+          </div>
+          <div class="grid-showcase__controls">
+            <span class="product-results__count" id="product-count" aria-live="polite">Loading products…</span>
+          </div>
+        </div>
+        <div class="grid" id="product-grid" aria-live="polite">
+          <div class="grid-empty"><span class="product-empty__mark">✳</span><h3>Loading the edit…</h3></div>
+        </div>
+      </section>
+
+      <details class="product-submit" id="submit-product">
+        <summary><span>Share an affiliate find</span><span class="product-submit__plus" aria-hidden="true">+</span></summary>
+        <form class="product-form" id="product-form">
+          <label>Product name<input name="title" maxlength="90" required placeholder="e.g. Studio wireless headphones"></label>
+          <label>Brand<input name="brand" maxlength="60" required placeholder="Brand name"></label>
+          <label>Category<select name="category" required>
+            <option value="Keyboards">Keyboards</option><option value="Mice">Mice</option><option value="Watches">Watches</option><option value="Audio">Audio</option><option value="Desk Gear">Desk Gear</option>
+          </select></label>
+          <label class="product-form__wide">Affiliate URL<input name="url" type="url" required placeholder="https://…"></label>
+          <label>Product image URL <span>(optional)</span><input name="image_url" type="url" placeholder="https://…"></label>
+          <label>Commission <span>(optional)</span><input name="commission" maxlength="50" placeholder="e.g. 8%"></label>
+          <label class="product-form__wide">Short note <span>(optional)</span><textarea name="description" maxlength="280" rows="2" placeholder="What makes this worth a look?"></textarea></label>
+          <label>Display name <span>(optional)</span><input name="publisher" maxlength="40" placeholder="How should we credit you?"></label>
+          <div class="product-form__submit"><p id="product-form-status" role="status"></p><button type="submit">Post product <span aria-hidden="true">↗</span></button></div>
+        </form>
+      </details>
+
+      <div class="categories__bottom">
+        <span>Curated for your setup</span>
+        <span>Neural Nuance · Objects of everyday</span>
+      </div>
+    </section>
+    <footer class="site-footer" id="footer">
+      <div class="footer-hover" aria-label="Interactive Perkdrop wordmark. Move your pointer across the letters.">
+        <canvas class="footer-hover__canvas" aria-hidden="true"></canvas>
+        <img class="footer-hover__source" src="./footer-mark.svg" alt="" aria-hidden="true" />
+        <span class="footer-hover__hint" aria-hidden="true">Move through the mark</span>
+      </div>
+      <div class="site-footer__bottom">
+        <a class="site-footer__brand" href="#categories" aria-label="Perkdrop home">PERKDROP<span>®</span></a>
+        <p>Good finds. Shared with intention.</p>
+        <nav class="site-footer__links" aria-label="Footer navigation">
+          <a href="#categories">Explore categories</a>
+          <a href="#submit-product">Share a find</a>
+          <a href="#categories">Back to top ↑</a>
+        </nav>
+      </div>
+    </footer>
+    </main>
+    </div>
+    <script src="./grid-animation/js/gsap.min.js"></script>
+    <script src="./grid-animation/js/ScrollTrigger.min.js"></script>
+    <script src="./grid-animation/js/ScrollSmoother.min.js"></script>
+    <script src="./grid-animation/js/imagesloaded.pkgd.min.js"></script>
+    <script src="./catalog.js?v=6"></script>
+    <script src="./footer-hover.js?v=2"></script>
+    <script type="module" src="./grid-animation/js/demo3/index.js?v=3"></script>
+  </body>
+</html>
