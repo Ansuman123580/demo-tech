@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Perkdrop Studio — Admin Control Center</title>
+    <title>Perkdrop Studio — Advanced Admin Command Center</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -54,13 +54,34 @@
           <div class="brand-badge">
             <span class="brand-mark">✳</span>
             <span class="brand-text">PERKDROP</span>
-            <span class="badge badge-accent">STUDIO</span>
+            <span class="badge badge-accent">STUDIO PRO</span>
           </div>
+
+          <!-- PRIMARY NAVIGATION TABS -->
+          <nav class="nav-tabs" aria-label="Dashboard views">
+            <button class="nav-tab is-active" data-view="products" id="tab-nav-products">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>
+              <span>Products (<span id="nav-count-products">0</span>)</span>
+            </button>
+            <button class="nav-tab" data-view="categories" id="tab-nav-categories">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              <span>Categories (<span id="nav-count-categories">0</span>)</span>
+            </button>
+            <button class="nav-tab" data-view="analytics" id="tab-nav-analytics">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+              <span>Analytics & Insights</span>
+            </button>
+          </nav>
         </div>
+
         <div class="topbar-right">
+          <button id="backup-btn" class="btn btn-ghost btn-sm" title="Download full JSON backup of catalog and categories">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            <span>Backup 📥</span>
+          </button>
           <a href="/" target="_blank" class="btn btn-ghost btn-sm">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
-            <span>Live Storefront ↗</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+            <span>Live Store ↗</span>
           </a>
           <div class="user-pill">
             <span class="user-avatar">A</span>
@@ -74,113 +95,163 @@
 
       <!-- MAIN CONTENT -->
       <main class="dashboard-body">
-        <!-- HEADER ROW -->
-        <div class="section-header">
-          <div>
-            <h1 class="page-title">Affiliate Hub & Product Engine</h1>
-            <p class="page-subtitle">Manage redirect destinations (Amazon, Flipkart), media assets, and view click metrics.</p>
-          </div>
-          <div class="header-actions">
-            <button id="open-create-btn" class="btn btn-accent">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-              <span>+ Add New Product</span>
-            </button>
-          </div>
-        </div>
 
-        <!-- STATS OVERVIEW CARDS -->
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-icon metric-icon--blue">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <!-- ================= VIEW 1: PRODUCTS ================= -->
+        <section id="view-products" class="tab-view is-visible">
+          <!-- HEADER ROW -->
+          <div class="section-header">
+            <div>
+              <h1 class="page-title">Affiliate Hub & Product Engine</h1>
+              <p class="page-subtitle">Manage destination links (Amazon, Flipkart), images, and live click stats.</p>
             </div>
-            <div class="metric-info">
-              <span class="metric-label">Total Catalog Finds</span>
-              <h3 class="metric-value" id="stat-total-products">0</h3>
+            <div class="header-actions">
+              <button id="open-create-btn" class="btn btn-accent">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                <span>+ Add New Product</span>
+              </button>
             </div>
           </div>
 
-          <div class="metric-card">
-            <div class="metric-icon metric-icon--gold">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M10 14L21 3M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>
+          <!-- STATS OVERVIEW CARDS -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-icon metric-icon--blue">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              </div>
+              <div class="metric-info">
+                <span class="metric-label">Total Catalog Finds</span>
+                <h3 class="metric-value" id="stat-total-products">0</h3>
+              </div>
             </div>
-            <div class="metric-info">
-              <span class="metric-label">Total Outbound Clicks</span>
-              <h3 class="metric-value" id="stat-total-clicks">0</h3>
+
+            <div class="metric-card">
+              <div class="metric-icon metric-icon--gold">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M10 14L21 3M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>
+              </div>
+              <div class="metric-info">
+                <span class="metric-label">Total Outbound Clicks</span>
+                <h3 class="metric-value" id="stat-total-clicks">0</h3>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon metric-icon--emerald">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              </div>
+              <div class="metric-info">
+                <span class="metric-label">Top Category</span>
+                <h3 class="metric-value" id="stat-top-category">—</h3>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon metric-icon--purple">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
+              <div class="metric-info">
+                <span class="metric-label">Top Clicked Item</span>
+                <h3 class="metric-value metric-value--sm" id="stat-top-item">—</h3>
+              </div>
             </div>
           </div>
 
-          <div class="metric-card">
-            <div class="metric-icon metric-icon--emerald">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          <!-- SEARCH & CONTROLS -->
+          <div class="filter-bar">
+            <div class="search-box">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="filter-search" placeholder="Search by title, brand, or affiliate URL…" />
             </div>
-            <div class="metric-info">
-              <span class="metric-label">Top Category</span>
-              <h3 class="metric-value" id="stat-top-category">—</h3>
+            <div class="filter-actions">
+              <select id="filter-category" class="select-control">
+                <option value="">All Categories</option>
+              </select>
+              <select id="sort-control" class="select-control">
+                <option value="newest">Newest First</option>
+                <option value="clicks">Highest Clicks</option>
+                <option value="title">Product Name (A-Z)</option>
+              </select>
             </div>
           </div>
 
-          <div class="metric-card">
-            <div class="metric-icon metric-icon--purple">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <!-- PRODUCT TABLE -->
+          <div class="card-panel">
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th style="width: 72px;">Image</th>
+                    <th>Product & Brand</th>
+                    <th>Category</th>
+                    <th>Target Affiliate Destination</th>
+                    <th style="text-align: center;">Clicks</th>
+                    <th style="text-align: right; width: 170px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="products-tbody">
+                  <tr>
+                    <td colspan="6" class="text-center py-5">
+                      <div class="empty-state">
+                        <div class="spinner"></div>
+                        <p>Loading products…</p>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div class="metric-info">
-              <span class="metric-label">Top Clicked Item</span>
-              <h3 class="metric-value metric-value--sm" id="stat-top-item">—</h3>
+          </div>
+        </section>
+
+        <!-- ================= VIEW 2: CATEGORIES ================= -->
+        <section id="view-categories" class="tab-view" style="display: none;">
+          <div class="section-header">
+            <div>
+              <h1 class="page-title">Category Architecture</h1>
+              <p class="page-subtitle">Add custom categories (e.g. Smartphones, Gaming, Laptops). They sync live with the storefront filter tabs!</p>
+            </div>
+            <div class="header-actions">
+              <button id="open-create-category-btn" class="btn btn-accent">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                <span>+ Add New Category</span>
+              </button>
             </div>
           </div>
-        </div>
 
-        <!-- SEARCH & CONTROLS -->
-        <div class="filter-bar">
-          <div class="search-box">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="filter-search" placeholder="Search by title, brand, or affiliate URL…" />
+          <div id="categories-grid" class="categories-admin-grid">
+            <!-- Dynamic Category Cards will render here -->
           </div>
-          <div class="filter-actions">
-            <select id="filter-category" class="select-control">
-              <option value="">All Categories</option>
-              <option value="Keyboards">Keyboards</option>
-              <option value="Mice">Mice</option>
-              <option value="Watches">Watches</option>
-              <option value="Audio">Audio</option>
-              <option value="Desk Gear">Desk Gear</option>
-            </select>
-            <select id="sort-control" class="select-control">
-              <option value="newest">Newest First</option>
-              <option value="clicks">Highest Clicks</option>
-              <option value="title">Product Name (A-Z)</option>
-            </select>
-          </div>
-        </div>
+        </section>
 
-        <!-- PRODUCT TABLE / LIST -->
-        <div class="card-panel">
-          <div class="table-responsive">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th style="width: 72px;">Image</th>
-                  <th>Product & Brand</th>
-                  <th>Category</th>
-                  <th>Target Affiliate Destination</th>
-                  <th style="text-align: center;">Clicks</th>
-                  <th style="text-align: right; width: 140px;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="products-tbody">
-                <tr>
-                  <td colspan="6" class="text-center py-5">
-                    <div class="empty-state">
-                      <div class="spinner"></div>
-                      <p>Loading products…</p>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        <!-- ================= VIEW 3: ANALYTICS ================= -->
+        <section id="view-analytics" class="tab-view" style="display: none;">
+          <div class="section-header">
+            <div>
+              <h1 class="page-title">Analytics & Redirection Insights</h1>
+              <p class="page-subtitle">Track which affiliate platforms and products are generating the most client interest.</p>
+            </div>
           </div>
-        </div>
+
+          <div class="analytics-layout">
+            <!-- Left: Platform share breakdown -->
+            <div class="analytics-card">
+              <h3 class="analytics-card-title">Destination Platform Share</h3>
+              <p class="analytics-card-sub">Distribution of outbound referral clicks by platform</p>
+              <div id="platform-bars" class="platform-bars-list">
+                <!-- Platform bars will render here -->
+              </div>
+            </div>
+
+            <!-- Right: Top 5 products leaderboard -->
+            <div class="analytics-card">
+              <h3 class="analytics-card-title">Top Performing Affiliate Links</h3>
+              <p class="analytics-card-sub">Highest outbound click-through finds</p>
+              <div id="leaderboard-list" class="leaderboard-list">
+                <!-- Leaderboard items will render here -->
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
     </div>
 
@@ -215,13 +286,7 @@
               <div class="form-group flex-1">
                 <label for="prod-category">Category <span class="required">*</span></label>
                 <select id="prod-category" required>
-                  <option value="Keyboards">Keyboards</option>
-                  <option value="Mice">Mice</option>
-                  <option value="Watches">Watches</option>
-                  <option value="Audio">Audio</option>
-                  <option value="Desk Gear">Desk Gear</option>
-                  <option value="Shopping">Shopping</option>
-                  <option value="Other">Other</option>
+                  <!-- Dynamically populated from categories list -->
                 </select>
               </div>
               <div class="form-group flex-1">
@@ -302,10 +367,49 @@
       </div>
     </div>
 
+    <!-- CATEGORY MODAL (ADD / EDIT) -->
+    <div id="category-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card modal-card--sm">
+        <div class="modal-header">
+          <div>
+            <h2 id="cat-modal-title">Add New Category</h2>
+            <p class="modal-subtitle">Will immediately appear in filters and storefront tabs.</p>
+          </div>
+          <button id="cat-modal-close-btn" class="modal-close" aria-label="Close modal">&times;</button>
+        </div>
+
+        <form id="category-modal-form" class="modal-form" style="padding: 28px 32px;">
+          <input type="hidden" id="category-edit-id" />
+
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label for="cat-name">Category Name <span class="required">*</span></label>
+              <input type="text" id="cat-name" required placeholder="e.g. Gaming or Smartphones" maxlength="40" />
+            </div>
+            <div class="form-group flex-1">
+              <label for="cat-icon">Emoji Icon <span class="required">*</span></label>
+              <input type="text" id="cat-icon" required placeholder="e.g. 📱 or 🎮" maxlength="4" style="text-align: center; font-size: 18px;" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="cat-desc">Description <span>(optional)</span></label>
+            <input type="text" id="cat-desc" placeholder="Brief summary of finds in this category" maxlength="120" />
+          </div>
+
+          <div class="modal-footer" style="padding-top: 16px;">
+            <button type="button" class="btn btn-ghost" id="cat-modal-cancel-btn">Cancel</button>
+            <button type="submit" class="btn btn-accent" id="cat-modal-save-btn">
+              <span id="cat-save-btn-text">Save Category</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- TOAST NOTIFICATION -->
     <div id="toast" class="toast" style="display: none;"></div>
 
     <script src="./admin.js"></script>
   </body>
 </html>
-

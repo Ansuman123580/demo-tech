@@ -1,0 +1,38 @@
+[
+  {
+    "id": "keyboards",
+    "name": "Keyboards",
+    "icon": "⌨️",
+    "description": "Mechanical, tactile and wireless desk typing tools."
+  },
+  {
+    "id": "mice",
+    "name": "Mice",
+    "icon": "🖱️",
+    "description": "Ergonomic, optical and precision pointing devices."
+  },
+  {
+    "id": "watches",
+    "name": "Watches",
+    "icon": "⌚",
+    "description": "Considered everyday timepieces and wrist instruments."
+  },
+  {
+    "id": "audio",
+    "name": "Audio",
+    "icon": "🎧",
+    "description": "Studio headphones, planar drivers and desktop monitors."
+  },
+  {
+    "id": "desk-gear",
+    "name": "Desk Gear",
+    "icon": "🪵",
+    "description": "Trays, risers, wool felt desk mats and workspace lighting."
+  },
+  {
+    "id": "smartphones",
+    "name": "Smartphones",
+    "icon": "📱",
+    "description": "Flagship mobile devices and accessories"
+  }
+]

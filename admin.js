@@ -1,9 +1,12 @@
 (() => {
   let token = localStorage.getItem('perkdrop_admin_token') || '';
   let allOffers = [];
+  let allCategories = [];
   let editingId = null;
+  let editingCatId = null;
   let stagedImageBase64 = null;
   let stagedImageFilename = null;
+  let currentView = 'products';
 
   // DOM Elements
   const loginView = document.getElementById('login-view');
@@ -14,6 +17,17 @@
   const loginError = document.getElementById('login-error');
   const logoutBtn = document.getElementById('logout-btn');
   const userDisplayEmail = document.getElementById('user-display-email');
+  const backupBtn = document.getElementById('backup-btn');
+
+  // Nav Tabs & Counts
+  const navTabs = document.querySelectorAll('.nav-tab');
+  const tabViews = {
+    products: document.getElementById('view-products'),
+    categories: document.getElementById('view-categories'),
+    analytics: document.getElementById('view-analytics')
+  };
+  const navCountProducts = document.getElementById('nav-count-products');
+  const navCountCategories = document.getElementById('nav-count-categories');
 
   // Stats Elements
   const statTotalProducts = document.getElementById('stat-total-products');
@@ -27,7 +41,7 @@
   const sortControl = document.getElementById('sort-control');
   const productsTbody = document.getElementById('products-tbody');
 
-  // Modal Elements
+  // Product Modal Elements
   const productModal = document.getElementById('product-modal');
   const openCreateBtn = document.getElementById('open-create-btn');
   const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -36,7 +50,7 @@
   const modalTitle = document.getElementById('modal-title');
   const saveBtnText = document.getElementById('save-btn-text');
 
-  // Modal Form Inputs
+  // Product Modal Inputs
   const prodId = document.getElementById('prod-id');
   const prodTitle = document.getElementById('prod-title');
   const prodBrand = document.getElementById('prod-brand');
@@ -61,6 +75,24 @@
   const previewTitle = document.getElementById('preview-title');
   const previewCatBadge = document.getElementById('preview-cat-badge');
   const previewLinkBadge = document.getElementById('preview-link-badge');
+
+  // Category Modal Elements
+  const categoryModal = document.getElementById('category-modal');
+  const openCreateCategoryBtn = document.getElementById('open-create-category-btn');
+  const catModalCloseBtn = document.getElementById('cat-modal-close-btn');
+  const catModalCancelBtn = document.getElementById('cat-modal-cancel-btn');
+  const categoryModalForm = document.getElementById('category-modal-form');
+  const categoryEditId = document.getElementById('category-edit-id');
+  const catModalTitle = document.getElementById('cat-modal-title');
+  const catName = document.getElementById('cat-name');
+  const catIcon = document.getElementById('cat-icon');
+  const catDesc = document.getElementById('cat-desc');
+  const catSaveBtnText = document.getElementById('cat-save-btn-text');
+  const categoriesGrid = document.getElementById('categories-grid');
+
+  // Analytics Elements
+  const platformBars = document.getElementById('platform-bars');
+  const leaderboardList = document.getElementById('leaderboard-list');
 
   // Toast
   const toast = document.getElementById('toast');
@@ -103,6 +135,29 @@
     loginView.style.display = 'flex';
   }
 
+  // NAVIGATION TABS
+  navTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const view = tab.dataset.view;
+      switchView(view);
+    });
+  });
+
+  function switchView(viewName) {
+    currentView = viewName;
+    navTabs.forEach(t => {
+      t.classList.toggle('is-active', t.dataset.view === viewName);
+    });
+    for (const [name, el] of Object.entries(tabViews)) {
+      if (el) {
+        el.style.display = (name === viewName) ? 'block' : 'none';
+      }
+    }
+    if (viewName === 'analytics') {
+      renderAnalytics();
+    }
+  }
+
   // AUTHENTICATION LOGIC
   async function checkAuth() {
     if (!token) {
@@ -116,7 +171,7 @@
         userDisplayEmail.textContent = res.email || 'admin@gmail.com';
         loginView.style.display = 'none';
         dashboardView.style.display = 'flex';
-        loadProducts();
+        await Promise.all([loadCategories(), loadProducts()]);
       } else {
         handleUnauthorized();
       }
@@ -147,8 +202,8 @@
       userDisplayEmail.textContent = data.user?.email || email;
       loginView.style.display = 'none';
       dashboardView.style.display = 'flex';
-      showToast('Welcome to Perkdrop Studio!');
-      loadProducts();
+      showToast('Welcome to Perkdrop Studio Pro!');
+      await Promise.all([loadCategories(), loadProducts()]);
     } catch (err) {
       loginError.textContent = err.message;
       loginError.style.display = 'block';
@@ -165,13 +220,180 @@
     showToast('Signed out successfully.');
   });
 
+  // CATEGORIES MANAGEMENT
+  async function loadCategories() {
+    try {
+      const data = await api('/api/admin/categories');
+      allCategories = data.categories || [];
+      navCountCategories.textContent = allCategories.length;
+      updateCategoryDropdowns();
+      renderCategoriesGrid();
+    } catch (err) {
+      console.warn('Could not load categories:', err);
+    }
+  }
+
+  function updateCategoryDropdowns() {
+    // 1. Filter Category dropdown
+    const currentFilterVal = filterCategory.value;
+    filterCategory.innerHTML = `<option value="">All Categories</option>` +
+      allCategories.map(c => `<option value="${escapeHtml(c.name)}">${c.icon || '🏷️'} ${escapeHtml(c.name)}</option>`).join('');
+    if (currentFilterVal && allCategories.some(c => c.name === currentFilterVal)) {
+      filterCategory.value = currentFilterVal;
+    }
+
+    // 2. Product Form Category dropdown
+    const currentProdCatVal = prodCategory.value;
+    prodCategory.innerHTML = allCategories.map(c =>
+      `<option value="${escapeHtml(c.name)}">${c.icon || '🏷️'} ${escapeHtml(c.name)}</option>`
+    ).join('') + `<option value="Other">📦 Other</option>`;
+    if (currentProdCatVal) {
+      prodCategory.value = currentProdCatVal;
+    }
+  }
+
+  function renderCategoriesGrid() {
+    if (!categoriesGrid) return;
+    if (allCategories.length === 0) {
+      categoriesGrid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 48px; color: var(--text-dim);">
+          <p>No categories found. Click "+ Add New Category" to create one.</p>
+        </div>
+      `;
+      return;
+    }
+
+    categoriesGrid.innerHTML = allCategories.map(cat => {
+      const count = cat.product_count || 0;
+      return `
+        <div class="cat-admin-card" data-cat-id="${cat.id}">
+          <div>
+            <div class="cat-card-header">
+              <div class="cat-card-icon-box">${cat.icon || '📦'}</div>
+              <span class="cat-count-pill">${count} ${count === 1 ? 'product' : 'products'}</span>
+            </div>
+            <h3 class="cat-card-title">${escapeHtml(cat.name)}</h3>
+            <p class="cat-card-slug">ID: ${escapeHtml(cat.id)}</p>
+            <p class="cat-card-desc">${escapeHtml(cat.description || 'No description provided.')}</p>
+          </div>
+          <div class="cat-card-actions">
+            <button class="btn btn-ghost btn-sm btn-cat-edit" data-id="${cat.id}">
+              ✏️ Edit
+            </button>
+            <button class="btn btn-danger btn-sm btn-cat-delete" data-id="${cat.id}" title="Delete Category">
+              🗑️ Delete
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    categoriesGrid.querySelectorAll('.btn-cat-edit').forEach(b => {
+      b.addEventListener('click', () => openEditCategoryModal(b.dataset.id));
+    });
+
+    categoriesGrid.querySelectorAll('.btn-cat-delete').forEach(b => {
+      b.addEventListener('click', () => deleteCategory(b.dataset.id));
+    });
+  }
+
+  function openCreateCategoryModal() {
+    editingCatId = null;
+    categoryModalForm.reset();
+    categoryEditId.value = '';
+    catModalTitle.textContent = 'Add New Category';
+    catSaveBtnText.textContent = 'Save Category';
+    categoryModal.style.display = 'flex';
+    catName.focus();
+  }
+
+  function openEditCategoryModal(id) {
+    const cat = allCategories.find(c => c.id === id);
+    if (!cat) return;
+    editingCatId = id;
+    categoryEditId.value = id;
+    catName.value = cat.name || '';
+    catIcon.value = cat.icon || '🏷️';
+    catDesc.value = cat.description || '';
+    catModalTitle.textContent = 'Edit Category';
+    catSaveBtnText.textContent = 'Update Category';
+    categoryModal.style.display = 'flex';
+    catName.focus();
+  }
+
+  function closeCategoryModal() {
+    categoryModal.style.display = 'none';
+  }
+
+  openCreateCategoryBtn.addEventListener('click', openCreateCategoryModal);
+  catModalCloseBtn.addEventListener('click', closeCategoryModal);
+  catModalCancelBtn.addEventListener('click', closeCategoryModal);
+  categoryModal.addEventListener('click', (e) => {
+    if (e.target === categoryModal) closeCategoryModal();
+  });
+
+  categoryModalForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const saveBtn = document.getElementById('cat-modal-save-btn');
+    saveBtn.disabled = true;
+    catSaveBtnText.textContent = 'Saving…';
+
+    const payload = {
+      name: catName.value.trim(),
+      icon: catIcon.value.trim() || '🏷️',
+      description: catDesc.value.trim()
+    };
+
+    try {
+      if (editingCatId) {
+        await api(`/api/admin/categories/${editingCatId}`, {
+          method: 'PUT',
+          body: payload
+        });
+        showToast('Category updated successfully!');
+      } else {
+        await api('/api/admin/categories', {
+          method: 'POST',
+          body: payload
+        });
+        showToast('New category added!');
+      }
+      notifyCatalogChanged();
+      closeCategoryModal();
+      await Promise.all([loadCategories(), loadProducts()]);
+    } catch (err) {
+      showToast(err.message, true);
+    } finally {
+      saveBtn.disabled = false;
+      catSaveBtnText.textContent = editingCatId ? 'Update Category' : 'Save Category';
+    }
+  });
+
+  async function deleteCategory(id) {
+    const cat = allCategories.find(c => c.id === id);
+    if (!cat) return;
+    if (!confirm(`Delete category "${cat.name}"? Products in this category will remain in the catalog.`)) {
+      return;
+    }
+    try {
+      await api(`/api/admin/categories/${id}`, { method: 'DELETE' });
+      showToast(`Category "${cat.name}" deleted.`);
+      notifyCatalogChanged();
+      await Promise.all([loadCategories(), loadProducts()]);
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
   // PRODUCTS FETCH & METRICS
   async function loadProducts() {
     try {
       const data = await api('/api/admin/offers');
       allOffers = data.offers || [];
+      navCountProducts.textContent = allOffers.length;
       updateMetrics();
       renderTable();
+      if (currentView === 'analytics') renderAnalytics();
     } catch (err) {
       showToast(err.message, true);
     }
@@ -214,9 +436,9 @@
 
   function getPlatformBadge(url = '') {
     const u = url.toLowerCase();
-    if (u.includes('amazon.')) return { text: 'Amazon', class: 'dest-badge--amazon' };
-    if (u.includes('flipkart.')) return { text: 'Flipkart', class: 'dest-badge--flipkart' };
-    return { text: 'Direct Link', class: 'dest-badge--other' };
+    if (u.includes('amazon.')) return { text: 'Amazon', class: 'dest-badge--amazon', color: '#ff9900' };
+    if (u.includes('flipkart.')) return { text: 'Flipkart', class: 'dest-badge--flipkart', color: '#2874f0' };
+    return { text: 'Direct Link', class: 'dest-badge--other', color: '#94a3b8' };
   }
 
   // RENDER TABLE
@@ -287,8 +509,11 @@
           </td>
           <td>
             <div class="table-actions">
-              <button class="btn btn-ghost btn-sm btn-edit" data-id="${o.id}">
-                ✏️ Edit
+              <button class="btn btn-ghost btn-sm btn-edit" data-id="${o.id}" title="Edit Product">
+                ✏️
+              </button>
+              <button class="btn btn-ghost btn-sm btn-clone" data-id="${o.id}" title="Duplicate / Clone Product">
+                📋
               </button>
               <button class="btn btn-danger btn-sm btn-delete" data-id="${o.id}" title="Delete Product">
                 🗑️
@@ -302,6 +527,10 @@
     // Attach row events
     productsTbody.querySelectorAll('.btn-edit').forEach(b => {
       b.addEventListener('click', () => openEditModal(b.dataset.id));
+    });
+
+    productsTbody.querySelectorAll('.btn-clone').forEach(b => {
+      b.addEventListener('click', () => cloneProduct(b.dataset.id));
     });
 
     productsTbody.querySelectorAll('.btn-delete').forEach(b => {
@@ -322,6 +551,30 @@
   filterSearch.addEventListener('input', renderTable);
   filterCategory.addEventListener('change', renderTable);
   sortControl.addEventListener('change', renderTable);
+
+  // CLONE PRODUCT
+  function cloneProduct(id) {
+    const item = allOffers.find(o => o.id === id);
+    if (!item) return;
+
+    openCreateModal();
+    prodTitle.value = `Copy of ${item.title || ''}`;
+    prodBrand.value = item.brand || '';
+    prodCategory.value = item.category || 'Keyboards';
+    prodCommission.value = item.commission || '';
+    prodUrl.value = item.url || '';
+    prodImageUrl.value = item.image_url || '';
+    prodDescription.value = item.description || '';
+
+    if (item.image_url && !item.image_url.startsWith('/uploads/')) {
+      setTab('url');
+    } else {
+      setTab('upload');
+    }
+
+    updateLivePreview();
+    showToast('Cloned product into form. Edit details and click Save!');
+  }
 
   // MODAL CONTROLS
   function openCreateModal() {
@@ -529,7 +782,7 @@
 
       notifyCatalogChanged();
       closeModal();
-      await loadProducts();
+      await Promise.all([loadCategories(), loadProducts()]);
     } catch (err) {
       showToast(err.message, true);
     } finally {
@@ -550,10 +803,103 @@
       await api(`/api/admin/offers/${id}`, { method: 'DELETE' });
       showToast('Product deleted.');
       notifyCatalogChanged();
-      await loadProducts();
+      await Promise.all([loadCategories(), loadProducts()]);
     } catch (err) {
       showToast(err.message, true);
     }
+  }
+
+  // ANALYTICS VIEW RENDERER
+  function renderAnalytics() {
+    if (!platformBars || !leaderboardList) return;
+
+    let amazonClicks = 0;
+    let flipkartClicks = 0;
+    let otherClicks = 0;
+    let totalClicks = 0;
+
+    allOffers.forEach(o => {
+      const c = parseInt(o.click_count) || 0;
+      totalClicks += c;
+      const u = (o.url || '').toLowerCase();
+      if (u.includes('amazon.')) amazonClicks += c;
+      else if (u.includes('flipkart.')) flipkartClicks += c;
+      else otherClicks += c;
+    });
+
+    const getPct = (val) => totalClicks > 0 ? Math.round((val / totalClicks) * 100) : 0;
+
+    platformBars.innerHTML = `
+      <div class="platform-bar-row">
+        <div class="platform-bar-label">
+          <span style="color: #ff9900;">Amazon Outbound</span>
+          <span>${amazonClicks} clicks (${getPct(amazonClicks)}%)</span>
+        </div>
+        <div class="platform-bar-track">
+          <div class="platform-bar-fill" style="width: ${getPct(amazonClicks)}%; background: #ff9900;"></div>
+        </div>
+      </div>
+
+      <div class="platform-bar-row">
+        <div class="platform-bar-label">
+          <span style="color: #5aa1ff;">Flipkart Outbound</span>
+          <span>${flipkartClicks} clicks (${getPct(flipkartClicks)}%)</span>
+        </div>
+        <div class="platform-bar-track">
+          <div class="platform-bar-fill" style="width: ${getPct(flipkartClicks)}%; background: #2874f0;"></div>
+        </div>
+      </div>
+
+      <div class="platform-bar-row">
+        <div class="platform-bar-label">
+          <span style="color: #94a3b8;">Other / Direct</span>
+          <span>${otherClicks} clicks (${getPct(otherClicks)}%)</span>
+        </div>
+        <div class="platform-bar-track">
+          <div class="platform-bar-fill" style="width: ${getPct(otherClicks)}%; background: #64748b;"></div>
+        </div>
+      </div>
+    `;
+
+    // Leaderboard (Top 5)
+    const sorted = [...allOffers].sort((a, b) => (parseInt(b.click_count) || 0) - (parseInt(a.click_count) || 0)).slice(0, 5);
+
+    if (sorted.length === 0 || totalClicks === 0) {
+      leaderboardList.innerHTML = `<p style="color: var(--text-dim); font-size: 13px;">No click data recorded yet.</p>`;
+    } else {
+      leaderboardList.innerHTML = sorted.map((item, idx) => {
+        const c = parseInt(item.click_count) || 0;
+        return `
+          <div class="leaderboard-item">
+            <span class="leaderboard-rank">#${idx + 1}</span>
+            <div class="leaderboard-info">
+              <div class="leaderboard-title">${escapeHtml(item.title)}</div>
+              <div class="leaderboard-brand">${escapeHtml(item.brand)} · ${escapeHtml(item.category)}</div>
+            </div>
+            <span class="clicks-pill">${c} clicks</span>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // BACKUP DOWNLOAD
+  if (backupBtn) {
+    backupBtn.addEventListener('click', async () => {
+      try {
+        const data = await api('/api/admin/backup');
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `perkdrop-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Backup JSON downloaded!');
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    });
   }
 
   // Cross-tab and real-time synchronization
@@ -572,18 +918,24 @@
   if (adminChannel) {
     adminChannel.onmessage = (event) => {
       if (event.data && event.data.type === 'CATALOG_UPDATED') {
-        if (token) loadProducts();
+        if (token) {
+          loadCategories();
+          loadProducts();
+        }
       }
     };
   }
 
   window.addEventListener('storage', (event) => {
     if (event.key === 'perkdrop_catalog_version') {
-      if (token) loadProducts();
+      if (token) {
+        loadCategories();
+        loadProducts();
+      }
     }
   });
 
-  // Background sync for admin metrics and products
+  // Background sync for admin metrics, categories and products
   let adminLastVersion = '';
   async function syncAdminVersion() {
     if (!token) return;
@@ -593,6 +945,7 @@
       const info = await res.json();
       if (adminLastVersion && info.version && info.version !== adminLastVersion) {
         adminLastVersion = info.version;
+        loadCategories();
         loadProducts();
       } else if (!adminLastVersion && info.version) {
         adminLastVersion = info.version;
@@ -606,4 +959,3 @@
   // Initialize Auth Check
   checkAuth();
 })();
-

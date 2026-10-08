@@ -6,7 +6,7 @@
     audio: 'Audio',
     'desk-gear': 'Desk Gear'
   };
-  const categoryItems = [...document.querySelectorAll('.category-filter[data-category]')];
+  const categoryNav = document.querySelector('.category-selectors');
   const grid = document.getElementById('product-grid');
   const gridSection = document.getElementById('category-grid');
   const title = document.getElementById('product-list-title');
@@ -16,6 +16,7 @@
   const formStatus = document.getElementById('product-form-status');
   const formDetails = document.getElementById('submit-product');
   const offers = [];
+  let currentCategories = [];
   let selectedCategory = '';
 
   const make = (tag, className, text) => {
@@ -26,12 +27,13 @@
   };
 
   function render() {
+    const targetCategoryName = labels[selectedCategory] || selectedCategory;
     const visible = selectedCategory
-      ? offers.filter((offer) => offer.category === labels[selectedCategory])
+      ? offers.filter((offer) => (offer.category || '').toLowerCase() === targetCategoryName.toLowerCase())
       : offers;
-    title.textContent = selectedCategory ? `${labels[selectedCategory]}.` : 'All finds.';
+    title.textContent = selectedCategory ? `${targetCategoryName}.` : 'All finds.';
     description.textContent = selectedCategory
-      ? `Every ${labels[selectedCategory].toLowerCase()} find shared by the community.`
+      ? `Every ${targetCategoryName.toLowerCase()} find shared by the community.`
       : 'Products shared by the community, gathered in one place.';
     count.textContent = `${visible.length} ${visible.length === 1 ? 'product' : 'products'}`;
 
@@ -41,14 +43,16 @@
     if (!visible.length) {
       const empty = make('div', 'grid-empty');
       empty.append(make('span', 'product-empty__mark', '✳'));
-      empty.append(make('h3', '', selectedCategory ? `No ${labels[selectedCategory].toLowerCase()} finds yet.` : 'The edit is just getting started.'));
+      empty.append(make('h3', '', selectedCategory ? `No ${targetCategoryName.toLowerCase()} finds yet.` : 'The edit is just getting started.'));
       empty.append(make('p', '', 'Share a product to add the first find to this grid.'));
       const add = make('button', 'product-empty__button', 'Share a product');
       add.type = 'button';
       add.addEventListener('click', () => {
-        form.elements.category.value = selectedCategory ? labels[selectedCategory] : 'Keyboards';
+        if (form && form.elements.category) {
+          form.elements.category.value = selectedCategory ? targetCategoryName : 'Keyboards';
+        }
         formDetails.open = true;
-        form.elements.title.focus();
+        if (form && form.elements.title) form.elements.title.focus();
       });
       empty.append(add);
       grid.append(empty);
@@ -72,7 +76,7 @@
           cover.append(image);
         } else {
           cover.classList.add('product-grid__cover--empty');
-          cover.append(make('span', 'product-grid__monogram', offer.brand.slice(0, 1).toUpperCase()));
+          cover.append(make('span', 'product-grid__monogram', (offer.brand || 'P').slice(0, 1).toUpperCase()));
         }
         cover.append(make('span', 'product-grid__view', 'View find ↗'));
         tile.append(cover);
@@ -91,60 +95,120 @@
 
   function selectCategory(category, scrollToGrid = true) {
     selectedCategory = category;
-    categoryItems.forEach((item) => {
-      const active = item.dataset.category === category;
-      item.classList.toggle('is-selected', active);
-      item.setAttribute('aria-pressed', String(active));
-    });
-    if (category && labels[category]) form.elements.category.value = labels[category];
+    if (categoryNav) {
+      categoryNav.querySelectorAll('.category-filter').forEach((item) => {
+        const active = item.dataset.category === category;
+        item.classList.toggle('is-selected', active);
+        item.setAttribute('aria-pressed', String(active));
+      });
+    }
+    if (category && labels[category] && form && form.elements.category) {
+      form.elements.category.value = labels[category];
+    }
     render();
-    if (scrollToGrid) gridSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (scrollToGrid && gridSection) gridSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  categoryItems.forEach((item) => item.addEventListener('click', () => selectCategory(item.dataset.category)));
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const submit = form.querySelector('button[type="submit"]');
-    const data = Object.fromEntries(new FormData(form));
-    submit.disabled = true;
-    formStatus.textContent = 'Posting your product…';
-    formStatus.classList.remove('is-error');
-    try {
-      let result;
-      try {
-        const response = await fetch('/api/offers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        if (response.ok) {
-          result = await response.json();
-        }
-      } catch (err) {
-        // Fallback for static hosts
-      }
-      if (!result || !result.offer) {
-        result = {
-          offer: {
-            ...data,
-            id: 'demo-' + Date.now().toString(36),
-            created_at: new Date().toISOString(),
-            click_count: 0
-          }
-        };
-      }
-      offers.unshift(result.offer);
-      form.reset();
-      formDetails.open = false;
-      const category = Object.keys(labels).find((key) => labels[key] === result.offer.category) || '';
-      selectCategory(category);
-    } catch (error) {
-      formStatus.textContent = error.message;
-      formStatus.classList.add('is-error');
-    } finally {
-      submit.disabled = false;
+  function renderCategoryNav(categories) {
+    if (!categoryNav) return;
+    categoryNav.replaceChildren();
+
+    // 00 All finds button
+    const allBtn = make('button', 'category-filter' + (selectedCategory === '' ? ' is-selected' : ''));
+    allBtn.type = 'button';
+    allBtn.dataset.category = '';
+    allBtn.setAttribute('aria-pressed', String(selectedCategory === ''));
+    allBtn.append(make('span', 'category-filter__number', '00'));
+    allBtn.append(make('span', '', 'All finds'));
+    allBtn.addEventListener('click', () => selectCategory(''));
+    categoryNav.append(allBtn);
+
+    // Dynamic Category tabs
+    categories.forEach((cat, idx) => {
+      labels[cat.id] = cat.name;
+      const num = String(idx + 1).padStart(2, '0');
+      const active = selectedCategory === cat.id;
+      const btn = make('button', 'category-filter' + (active ? ' is-selected' : ''));
+      btn.type = 'button';
+      btn.dataset.category = cat.id;
+      btn.setAttribute('aria-pressed', String(active));
+      btn.append(make('span', 'category-filter__number', num));
+      btn.append(make('span', '', cat.name));
+      btn.addEventListener('click', () => selectCategory(cat.id));
+      categoryNav.append(btn);
+    });
+
+    // Populate submit form select if present
+    if (form && form.elements.category) {
+      form.elements.category.innerHTML = categories.map(c => 
+        `<option value="${c.name}">${c.name}</option>`
+      ).join('') + `<option value="Other">Other</option>`;
     }
-  });
+  }
+
+  async function loadCategories() {
+    try {
+      let data = null;
+      try {
+        const res = await fetch('/api/categories', { cache: 'no-store' });
+        if (res.ok) data = await res.json();
+      } catch (_) {}
+      if (!data) {
+        const staticRes = await fetch('categories.json');
+        if (staticRes.ok) data = await staticRes.json();
+      }
+      if (Array.isArray(data) && data.length) {
+        currentCategories = data;
+        renderCategoryNav(data);
+      }
+    } catch (_) {}
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const submit = form.querySelector('button[type="submit"]');
+      const data = Object.fromEntries(new FormData(form));
+      submit.disabled = true;
+      formStatus.textContent = 'Posting your product…';
+      formStatus.classList.remove('is-error');
+      try {
+        let result;
+        try {
+          const response = await fetch('/api/offers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          if (response.ok) {
+            result = await response.json();
+          }
+        } catch (err) {
+          // Fallback for static hosts
+        }
+        if (!result || !result.offer) {
+          result = {
+            offer: {
+              ...data,
+              id: 'demo-' + Date.now().toString(36),
+              created_at: new Date().toISOString(),
+              click_count: 0
+            }
+          };
+        }
+        offers.unshift(result.offer);
+        form.reset();
+        formDetails.open = false;
+        const categoryKey = Object.keys(labels).find((key) => labels[key].toLowerCase() === (result.offer.category || '').toLowerCase()) || '';
+        selectCategory(categoryKey);
+      } catch (error) {
+        formStatus.textContent = error.message;
+        formStatus.classList.add('is-error');
+      } finally {
+        submit.disabled = false;
+      }
+    });
+  }
 
   let currentCatalogVersion = '';
 
@@ -184,6 +248,7 @@
   if (catalogChannel) {
     catalogChannel.onmessage = (event) => {
       if (event.data && event.data.type === 'CATALOG_UPDATED') {
+        loadCategories();
         loadOffers(true);
       }
     };
@@ -191,6 +256,7 @@
 
   window.addEventListener('storage', (event) => {
     if (event.key === 'perkdrop_catalog_version') {
+      loadCategories();
       loadOffers(true);
     }
   });
@@ -202,6 +268,7 @@
       const info = await res.json();
       if (currentCatalogVersion && info.version && info.version !== currentCatalogVersion) {
         currentCatalogVersion = info.version;
+        loadCategories();
         loadOffers(true);
       } else if (!currentCatalogVersion && info.version) {
         currentCatalogVersion = info.version;
@@ -214,11 +281,14 @@
 
   // Sync on tab visibility change or focus
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') syncCatalogVersion();
+    if (document.visibilityState === 'visible') {
+      syncCatalogVersion();
+    }
   });
   window.addEventListener('focus', syncCatalogVersion);
 
   render();
+  loadCategories();
   loadOffers();
   syncCatalogVersion();
 })();

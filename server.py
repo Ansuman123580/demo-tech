@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Perkdrop backend server with full Admin API, Authentication, Analytics, and Image Upload."""
+"""Perkdrop backend server with full Admin API, Authentication, Analytics, Image Upload, and Dynamic Categories."""
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, unquote, urlsplit
 from datetime import datetime, timezone
-import json, re, uuid, os, base64, mimetypes
+import json, re, uuid, os, base64
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / 'offers.json'
+CATEGORIES_FILE = ROOT / 'categories.json'
 UPLOADS = ROOT / 'uploads'
 UPLOADS.mkdir(parents=True, exist_ok=True)
 
@@ -17,18 +18,25 @@ ADMIN_PASS = os.environ.get('PERKDROP_ADMIN_PASS', 'admin@0044')
 # Active auth session tokens in memory
 ACTIVE_TOKENS = set()
 
-DEFAULT_CATEGORIES = {
-    'Keyboards', 'Mice', 'Watches', 'Audio', 'Desk Gear',
-    'Shopping', 'Software', 'Learning', 'Travel', 'Finance',
-    'Wellness', 'Creator tools', 'Other'
-}
-
 def read_offers():
     try:
         data = json.loads(DATA.read_text(encoding='utf-8'))
         return data if isinstance(data, list) else []
     except (OSError, json.JSONDecodeError):
         return []
+
+def read_categories():
+    try:
+        data = json.loads(CATEGORIES_FILE.read_text(encoding='utf-8'))
+        return data if isinstance(data, list) else []
+    except (OSError, json.JSONDecodeError):
+        return [
+            {"id": "keyboards", "name": "Keyboards", "icon": "⌨️"},
+            {"id": "mice", "name": "Mice", "icon": "🖱️"},
+            {"id": "watches", "name": "Watches", "icon": "⌚"},
+            {"id": "audio", "name": "Audio", "icon": "🎧"},
+            {"id": "desk-gear", "name": "Desk Gear", "icon": "🪵"}
+        ]
 
 CATALOG_VERSION = str(int(datetime.now(timezone.utc).timestamp() * 1000))
 
@@ -42,9 +50,19 @@ def save_offers(offers):
     tmp.replace(DATA)
     bump_catalog_version()
 
+def save_categories(categories):
+    tmp = CATEGORIES_FILE.with_suffix('.tmp')
+    tmp.write_text(json.dumps(categories, ensure_ascii=False, indent=2), encoding='utf-8')
+    tmp.replace(CATEGORIES_FILE)
+    bump_catalog_version()
+
 def sanitize_filename(filename):
     clean = re.sub(r'[^a-zA-Z0-9_.-]', '_', filename)
     return clean[:80] or 'upload'
+
+def slugify(text):
+    slug = re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-')
+    return slug or f'cat-{uuid.uuid4().hex[:6]}'
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -60,7 +78,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Content-Length', str(len(raw)))
         self.send_header('Cache-Control', 'no-store')
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Token')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         self.end_headers()
         self.wfile.write(raw)
@@ -106,12 +124,18 @@ class Handler(SimpleHTTPRequestHandler):
         if path == '/api/offers':
             return self.send_json(200, read_offers())
 
+        # Public categories list
+        if path == '/api/categories':
+            return self.send_json(200, read_categories())
+
         # Catalog real-time version check for auto-refresh
         if path == '/api/catalog-version':
             offers = read_offers()
+            categories = read_categories()
             return self.send_json(200, {
                 'version': CATALOG_VERSION,
-                'count': len(offers)
+                'count': len(offers),
+                'category_count': len(categories)
             })
 
         # Auth verify
@@ -130,6 +154,38 @@ class Handler(SimpleHTTPRequestHandler):
                 'offers': offers,
                 'total_products': len(offers),
                 'total_clicks': total_clicks
+            })
+
+        # Admin categories list (with product counts)
+        if path == '/api/admin/categories':
+            if not self.check_auth():
+                return self.send_json(401, {'error': 'Unauthorized. Please log in.'})
+            categories = read_categories()
+            offers = read_offers()
+            
+            # Compute product count per category
+            cat_counts = {}
+            for o in offers:
+                cat_name = o.get('category', 'Other')
+                cat_counts[cat_name] = cat_counts.get(cat_name, 0) + 1
+
+            enriched = []
+            for c in categories:
+                c_copy = dict(c)
+                c_copy['product_count'] = cat_counts.get(c['name'], 0)
+                enriched.append(c_copy)
+
+            return self.send_json(200, {'categories': enriched})
+
+        # Full catalog backup
+        if path == '/api/admin/backup':
+            if not self.check_auth():
+                return self.send_json(401, {'error': 'Unauthorized'})
+            return self.send_json(200, {
+                'offers': read_offers(),
+                'categories': read_categories(),
+                'version': CATALOG_VERSION,
+                'exported_at': datetime.now(timezone.utc).isoformat()
             })
 
         # Instant Affiliate Link Redirection (Amazon / Flipkart / etc.)
@@ -199,7 +255,6 @@ class Handler(SimpleHTTPRequestHandler):
             original_name = body.get('filename', 'image.jpg')
             
             if ',' in raw_data:
-                # Strip out data:image/png;base64,
                 header, encoded = raw_data.split(',', 1)
             else:
                 encoded = raw_data
@@ -222,6 +277,37 @@ class Handler(SimpleHTTPRequestHandler):
 
             file_url = f"/uploads/{unique_filename}"
             return self.send_json(201, {'url': file_url})
+
+        # Admin Create New Category
+        if path == '/api/admin/categories':
+            if not self.check_auth():
+                return self.send_json(401, {'error': 'Unauthorized'})
+
+            body, err = self.read_json_body(max_bytes=10000)
+            if err or not isinstance(body, dict):
+                return self.send_json(400, {'error': 'Invalid category data'})
+
+            name = str(body.get('name', '')).strip()
+            if not name:
+                return self.send_json(400, {'error': 'Category name is required'})
+
+            categories = read_categories()
+            if any(c['name'].lower() == name.lower() for c in categories):
+                return self.send_json(400, {'error': f'Category "{name}" already exists.'})
+
+            icon = str(body.get('icon', '📦')).strip() or '📦'
+            description = str(body.get('description', '')).strip()
+            cat_id = slugify(name)
+
+            new_category = {
+                'id': cat_id,
+                'name': name,
+                'icon': icon,
+                'description': description
+            }
+            categories.append(new_category)
+            save_categories(categories)
+            return self.send_json(201, {'category': new_category})
 
         # Admin Create New Product / Offer
         if path == '/api/admin/offers' or path == '/api/offers':
@@ -276,6 +362,44 @@ class Handler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = unquote(parsed.path)
 
+        # Admin Edit Category: /api/admin/categories/<id>
+        if path.startswith('/api/admin/categories/'):
+            if not self.check_auth():
+                return self.send_json(401, {'error': 'Unauthorized'})
+
+            cat_id = path.removeprefix('/api/admin/categories/').strip('/')
+            body, err = self.read_json_body(max_bytes=10000)
+            if err or not isinstance(body, dict):
+                return self.send_json(400, {'error': 'Invalid category data'})
+
+            categories = read_categories()
+            target_cat = next((c for c in categories if c.get('id') == cat_id), None)
+            if not target_cat:
+                return self.send_json(404, {'error': 'Category not found'})
+
+            old_name = target_cat.get('name')
+            new_name = str(body.get('name', target_cat.get('name'))).strip()
+            target_cat['name'] = new_name
+            if 'icon' in body:
+                target_cat['icon'] = str(body.get('icon', '')).strip()
+            if 'description' in body:
+                target_cat['description'] = str(body.get('description', '')).strip()
+
+            save_categories(categories)
+
+            # If category name changed, update products that had old category name
+            if old_name and new_name and old_name != new_name:
+                offers = read_offers()
+                changed = False
+                for o in offers:
+                    if o.get('category') == old_name:
+                        o['category'] = new_name
+                        changed = True
+                if changed:
+                    save_offers(offers)
+
+            return self.send_json(200, {'category': target_cat})
+
         # Admin Edit Offer: /api/admin/offers/<id>
         if path.startswith('/api/admin/offers/'):
             if not self.check_auth():
@@ -307,6 +431,21 @@ class Handler(SimpleHTTPRequestHandler):
     def do_DELETE(self):
         parsed = urlparse(self.path)
         path = unquote(parsed.path)
+
+        # Admin Delete Category: /api/admin/categories/<id>
+        if path.startswith('/api/admin/categories/'):
+            if not self.check_auth():
+                return self.send_json(401, {'error': 'Unauthorized'})
+
+            cat_id = path.removeprefix('/api/admin/categories/').strip('/')
+            categories = read_categories()
+            target_cat = next((c for c in categories if c.get('id') == cat_id), None)
+            if not target_cat:
+                return self.send_json(404, {'error': 'Category not found'})
+
+            categories = [c for c in categories if c.get('id') != cat_id]
+            save_categories(categories)
+            return self.send_json(200, {'success': True, 'deleted_id': cat_id})
 
         # Admin Delete Offer: /api/admin/offers/<id>
         if path.startswith('/api/admin/offers/'):
