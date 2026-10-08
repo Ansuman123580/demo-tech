@@ -434,11 +434,13 @@ a {
 .footer-hover {
   position: relative;
   width: 100%;
-  height: clamp(210px, 24vw, 300px);
+  height: clamp(320px, 36vw, 440px);
   overflow: hidden;
-  background: transparent;
+  background: 
+    radial-gradient(ellipse at 50% 50%, rgba(229, 184, 105, 0.05) 0%, rgba(11, 15, 18, 0.95) 70%, #080c0f 100%);
   cursor: crosshair;
   isolation: isolate;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .footer-hover__canvas {
@@ -453,7 +455,7 @@ a {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: min(78%, 980px);
+  width: min(92%, 1380px);
   height: auto;
   visibility: hidden;
   transform: translate(-50%, -50%);
@@ -462,13 +464,31 @@ a {
 
 .footer-hover__hint {
   position: absolute;
-  right: 18px;
-  bottom: 16px;
-  color: rgba(219, 211, 191, .48);
-  font: 9px Arial, sans-serif;
-  letter-spacing: .16em;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(9, 13, 16, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(229, 184, 105, 0.3);
+  padding: 6px 18px;
+  border-radius: 999px;
+  color: #e5b869;
+  font-family: var(--font-display, "Space Grotesk", sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .12em;
   text-transform: uppercase;
   pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  animation: hintPulse 2.8s ease-in-out infinite;
+}
+
+@keyframes hintPulse {
+  0%, 100% { border-color: rgba(229, 184, 105, 0.25); box-shadow: 0 4px 16px rgba(229, 184, 105, 0.08); }
+  50% { border-color: rgba(229, 184, 105, 0.6); box-shadow: 0 4px 24px rgba(229, 184, 105, 0.22); }
 }
 
 .footer-inner {
