@@ -27,7 +27,7 @@ jobs:
           mkdir -p _site
           cp index.html styles.css catalog.js footer-hover.js footer-mark.svg categories.json offers.json _site/
           cp -R grid-animation images motion-pack _site/
-          # The Python server and admin panel are intentionally not deployed to public Pages.
+          # Static frontend preview only. Backend/server and admin panel are intentionally not deployed.
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
