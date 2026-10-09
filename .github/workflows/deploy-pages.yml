@@ -28,7 +28,11 @@ jobs:
       - name: Prepare static preview
         run: |
           mkdir -p _site
-          find . -mindepth 1 -maxdepth 1 ! -name _site ! -name .git ! -name .github -exec cp -R {} _site/ \\\;
+          for path in * .[^.]*; do
+            [ -e "$path" ] || continue
+            case "$path" in _site|.git|.github) continue ;; esac
+            cp -R "$path" _site/
+          done
           rm -rf _site/server.py _site/offers.json _site/categories.json _site/uploads _site/admin.html _site/admin.js _site/admin.css
           cat > _site/404.html <<'EOF'
           <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found</title></head><body style="font-family:system-ui;background:#080b12;color:#fff;padding:4rem"><h1>Page not found</h1><a href="./">Return to the demo</a></body></html>
